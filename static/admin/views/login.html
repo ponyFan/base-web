@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>登录</title>
+    <link rel="stylesheet" type="text/css" href="../layui/css/layui.css" />
+    <link rel="stylesheet" type="text/css" href="../css/login.css" />
+</head>
+
+<style type="text/css">
+    #img {
+        width: 25px;
+        height: 15px;
+        position: absolute;
+        margin-top: 12px;
+        margin-left: -30px;
+    }
+</style>
+<body>
+<div class="m-login-bg">
+    <div class="m-login">
+        <h3>系统登录</h3>
+        <div class="m-login-warp">
+            <form class="layui-form">
+                <div class="layui-form-item">
+                    <input type="text" id="username" name="username" required lay-verify="required|username"
+                           placeholder="用户名" autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-form-item">
+                    <input type="password" id="password" name="password" required lay-verify="required|password"
+                           placeholder="密码" autocomplete="off" class="layui-input" style="float: left;"
+                           onfocus="this.placeholder=''" onblur="this.placeholder='密码'">
+                    <!--在输入框后接img标签-->
+                    <img id="img" onclick="hideShowPsw()" src="../layui/images/self/icon-visible.png">
+                </div>
+                <div class="layui-form-item m-login-btn">
+                    <div class="layui-inline">
+                        <button id="submit" class="layui-btn layui-btn-normal" lay-submit lay-filter="login">登录</button>
+                    </div>
+                    <div class="layui-inline">
+                        <button type="reset" class="layui-btn layui-btn-primary">取消</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <p class="copyright">Copyright 2020-2030 by ZELEI</p>
+    </div>
+</div>
+<script src="../layui/layui.js" type="text/javascript" charset="utf-8"></script>
+<script src="../js/config.js"></script>
+<script src="../dist/js/common.min.js"></script>
+<script src="../js/util.js"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function() {
+        var form = layui.form(),
+            layer = layui.layer;
+        //自定义验证规则
+        //1.form标签需要添加 class="layui-form"
+        //2.输入框必须加lay-verify="required|title"
+        //3.提交按钮需要添加 lay-submit=""
+        form.verify({
+            username: function(value) {
+                if(value.length < 4) {
+                    return '用户名至少得4个字符啊';
+                }
+            },
+            password: [/(.+){6,12}$/, '密码必须6到12位']
+        });
+        form.on('submit(login)', function(data) {
+            debugger
+            var account = data.field.username;
+            var projectName = 'Default';
+            var account_mms = account +"@"+ projectName;
+            var projectName_mms = '';
+            var pwd = hex_md5(data.field.password);
+            var isMMS = false;
+            $.post(
+                CONFIG.requestURL + '/backend_mgt/v2/logon/',
+                base64_encode(JSON.stringify({
+                    "xxx1": "GetToken",
+                    "xxx2": isMMS ? projectName_mms : projectName,
+                    "xxx3": isMMS ? account_mms : account,
+                    "xxx4": pwd
+                })),
+                function (data) {
+                    debugger
+                    var result = JSON.parse(data);
+                    var status = result.rescode;
+                    var err = result['errInfo'];
+                    localStorage.setItem("project_name", isMMS ? result.project : projectName);
+                    localStorage.setItem("account", isMMS ? account_mms: account);
+                    localStorage.setItem("token", result.token);
+                    if (status == 200) {
+                        window.location.href = "index.html";
+                    } else {
+                        layer.alert(err, {
+                            title: '登录失败'
+                        });
+                        return false;
+                    }
+                });
+            return false;
+        });
+    });
+
+    /*设置密码可见与不可见*/
+    var demoImg = document.getElementById("img");
+    var PWD = document.getElementById("password");
+    function hideShowPsw() {
+        if (PWD.type == "password") {
+            PWD.type = "text";
+            demoImg.src = "../layui/images/self/icon-invisible.png"; //图片路径（闭眼图片）
+        } else {
+            PWD.type = "password";
+            demoImg.src = "../layui/images/self/icon-visible.png"; // 图片路径（睁眼图片）
+        }
+    }
+</script>
+</body>
+</html>
